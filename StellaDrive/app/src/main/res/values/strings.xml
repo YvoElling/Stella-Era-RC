@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Stella Drive</string>
+    <string name="ble_header">Connect to Era-RC</string>
+    <string name="connect_ble">Connect</string>
+    <string name="set_motor_power">Select Motor Power</string>
+    <string name="bluetooth_status">Bluetooth Status</string>
+    <string name="disconnected">Disconnected</string>
+</resources>
