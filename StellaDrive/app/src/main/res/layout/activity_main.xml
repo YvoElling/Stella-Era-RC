@@ -63,17 +63,11 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Disconnected"
+                    android:textAlignment="center"
                     android:textColor="@color/textPrimary"
                     android:textSize="18sp"
                     android:textStyle="italic" />
 
-                <ImageView
-                    android:id="@+id/ble_img"
-                    android:layout_width="20dp"
-                    android:layout_height="30dp"
-                    android:layout_weight="1"
-                    android:background="#000000"
-                    app:srcCompat="@android:drawable/stat_sys_data_bluetooth" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>

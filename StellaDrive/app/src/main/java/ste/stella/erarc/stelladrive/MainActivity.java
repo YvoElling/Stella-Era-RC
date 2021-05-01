@@ -6,31 +6,37 @@ import androidx.appcompat.widget.Toolbar;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import io.github.controlwear.virtual.joystick.android.JoystickView;
-import no.nordicsemi.android.ble.observer.ConnectionObserver;
+import no.nordicsemi.android.ble.callback.FailCallback;
+import no.nordicsemi.android.ble.callback.SuccessCallback;
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
 
-import ste.stella.erarc.stelladrive.ble.BLEManager;
+import no.nordicsemi.android.support.v18.scanner.ScanCallback;
+import no.nordicsemi.android.support.v18.scanner.ScanResult;
+import no.nordicsemi.android.support.v18.scanner.ScanSettings;
+import ste.stella.erarc.stelladrive.ble.StellaBleManager;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainActivity extends AppCompatActivity {
     private ControlManager controlManager = ControlManager.getInstance();
-    private BLEManager bleManager = new BLEManager(getApplicationContext());
-    private BluetoothLeScannerCompat bleScanner = BluetoothLeScannerCompat.getScanner();
+    private StellaBleManager stellaBleManager;
+    private BluetoothLeScannerCompat bleScanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.home_toolbar);
         setSupportActionBar(toolbar);
 
+        stellaBleManager = new StellaBleManager(getBaseContext());
+        bleScanner = BluetoothLeScannerCompat.getScanner();
         handleBluetoothStatusCard();
 
         SeekBar seekBar = (SeekBar) findViewById(R.id.motor_power_selected_level);
@@ -83,15 +91,16 @@ public class MainActivity extends AppCompatActivity {
                         controlManager.setEqualSpeed((float)strength);
                     } else if (angle < 85) {
                         int diff = 80 - angle;
-                        double result = (diff * (100.0 / 80.0)) * 0.01;
-                        controlManager.setLeftSpeed((int)result);
-                        controlManager.setRightSpeed(strength);
-                    } else if (angle > 95 ) {
-                        int diff = 80 - angle;
-                        double result = (diff * (100.0 / 80.0)) * 0.01;
-                        controlManager.setLeftSpeed(strength);
+                        double result = (diff * (100.0 / 80.0));
                         controlManager.setRightSpeed((int)result);
+                        controlManager.setLeftSpeed((float)result-strength);
+                    } else if (angle > 95 ) {
+                        int diff = angle - 80;
+                        double result = (diff * (100.0 / 80.0));
+                        controlManager.setRightSpeed(strength);
+                        controlManager.setLeftSpeed((float) ((float) strength-result));
                     }
+                    stellaBleManager.update();
                 } else {
                     controlManager.setEqualSpeed(0);
                     // Moving backwards; Not implemented for now.
@@ -117,10 +126,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onInitiateBleConnection() {
-        if (bleManager != null && !bleManager.isConnected()) {
+        if (stellaBleManager != null && !stellaBleManager.isConnected()) {
             //Request required permissions
-
-
+            updateBluetoothText("Requesting Permissions...");
+            requestPermissions(new String[]{"android.permission.ACCESS_FINE_LOCATION"}, 200);
         }
     }
 
@@ -139,8 +148,14 @@ public class MainActivity extends AppCompatActivity {
             if (permissionsMap.get(ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
                 if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-
+                    Intent enableBt = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBt, 0);
+                } else {
+                    updateBluetoothText("Scanning ...");
+                    start_scan();
                 }
+            } else {
+                finish();
             }
 
         } catch (Exception e) {
@@ -148,6 +163,54 @@ public class MainActivity extends AppCompatActivity {
             finish();
         }
 
+    }
+
+    void start_scan() {
+        System.out.println("Searching for Stella RC");
+        ScanSettings scanSettings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                .setUseHardwareBatchingIfSupported(true)
+                .build();
+        bleScanner.startScan(null, scanSettings, new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, @NonNull ScanResult result) {
+                super.onScanResult(callbackType, result);
+
+                BluetoothDevice device = result.getDevice();
+                String deviceName = device.getName();
+                if (device.getName() != null && device.getName().equals("Stella Era-RC '21")) {
+                    updateBluetoothText("Connecting ...");
+                    stellaBleManager.connect(device)
+                              .done(new SuccessCallback() {
+                                  @Override
+                                  public void onRequestCompleted(@NonNull BluetoothDevice device) {
+                                        ConnectivityKing.getInstance().updateBleName(device.getName());
+                                        ConnectivityKing.getInstance().updateConnectivityStatus(true);
+                                        ConnectivityKing.getInstance().updateMacAddress(device.getAddress());
+                                        handleBluetoothStatusCard();
+                                  }
+                              })
+                              .fail(new FailCallback() {
+                                  @Override
+                                  public void onRequestFailed(@NonNull BluetoothDevice device, int status) {
+                                      System.out.println("Couldnot connect ... " + status);
+                                  }
+                              }).enqueue();
+                }
+            }
+
+            @Override
+            public void onScanFailed(int errorCode) {
+                super.onScanFailed(errorCode);
+                System.out.println("Scan failed....");
+            }
+        });
+
+    }
+
+    public void updateBluetoothText(String text) {
+        TextView bleStatus = (TextView) findViewById(R.id.ble_actual_status);
+        bleStatus.setText(text);
     }
 
     @SuppressLint("SetTextI18n")
