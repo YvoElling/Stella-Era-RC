@@ -27,6 +27,11 @@ public class ControlManager {
         this.leftSpeed = speedLimit;
     }
 
+    public void stopBothMotors() {
+        this.rightSpeed = 1;
+        this.leftSpeed = 1;
+    }
+
     public float getLeftSpeed() {
         return leftSpeed;
     }

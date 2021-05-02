@@ -1,6 +1,6 @@
 #include <ArduinoBLE.h>
 
-#define DEBUG false
+#define DEBUG true
 
 // Start-up BLE procedure for controlling motor speed
 const char* uuidSpeedService = "46126124-aa6c-11eb-bcbc-0242ac130002";
@@ -46,11 +46,12 @@ void loop() {
     
     while(central.connected()) {
       
-      delay(250);
+      delay(50);
 
       int new_speed = leftSpeed.value();
       if (new_speed != speed) {
-        Serial.println(leftSpeed.value());
+        Serial.println(leftSpeed.value());   
+        Serial.println(rightSpeed.value());
       }
     }
   }

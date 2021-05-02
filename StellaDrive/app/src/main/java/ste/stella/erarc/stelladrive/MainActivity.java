@@ -81,8 +81,13 @@ public class MainActivity extends AppCompatActivity {
                 TextView angelValue = (TextView) findViewById(R.id.angle_val);
 
                 // Set latest data to the textfields in UI
-                powerValue.setText((Integer.toString(strength)) + "%");
+                powerValue.setText((strength) + "%");
                 angelValue.setText(Integer.toString(angle));
+
+                if (angle == 0 && strength == 0) {
+                    controlManager.stopBothMotors();
+                    stellaBleManager.update();
+                }
 
                 // Update values in ControlManager
                 if (angle <= 175 && angle >= 5) {
@@ -104,12 +109,14 @@ public class MainActivity extends AppCompatActivity {
                         controlManager.setRightSpeed((int)strength);
                         controlManager.setLeftSpeed((int)otherSpeed);
                     }
-                    stellaBleManager.update();
                 } else {
-                    controlManager.setEqualSpeed(0);
+                    controlManager.stopBothMotors();
                     // Moving backwards; Not implemented for now.
                 }
+                stellaBleManager.update();
             }
+
+
         });
     }
 
@@ -123,7 +130,12 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int optionId = item.getItemId();
         if (optionId == R.id.ble_settings) {
-            this.onInitiateBleConnection();
+            if (!stellaBleManager.isConnected()) {
+                this.onInitiateBleConnection();
+            } else {
+                stellaBleManager.disconnect();
+                updateBluetoothText("Disconnected");
+            }
         }
 
         return super.onOptionsItemSelected(item);
