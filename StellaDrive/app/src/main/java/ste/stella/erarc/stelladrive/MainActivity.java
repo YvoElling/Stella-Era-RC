@@ -32,6 +32,7 @@ import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 import ste.stella.erarc.stelladrive.ble.StellaBleManager;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static java.lang.Math.pow;
 
 public class MainActivity extends AppCompatActivity {
     private ControlManager controlManager = ControlManager.getInstance();
@@ -84,21 +85,24 @@ public class MainActivity extends AppCompatActivity {
                 angelValue.setText(Integer.toString(angle));
 
                 // Update values in ControlManager
-                if (angle <= 185 || angle >= 355) {
+                if (angle <= 175 && angle >= 5) {
                     // Moving forward
                     if (angle > 85 && angle < 95) {
                         //Equal speed for both wheels
                         controlManager.setEqualSpeed((float)strength);
-                    } else if (angle < 85) {
-                        int diff = 80 - angle;
-                        double result = (diff * (100.0 / 80.0));
-                        controlManager.setRightSpeed((int)result);
-                        controlManager.setLeftSpeed((float)result-strength);
-                    } else if (angle > 95 ) {
-                        int diff = angle - 80;
-                        double result = (diff * (100.0 / 80.0));
-                        controlManager.setRightSpeed(strength);
-                        controlManager.setLeftSpeed((float) ((float) strength-result));
+                    } else if (angle < 85 && angle > 5) {
+                        double scaler =  (angle - 5) * 0.0125;
+                        double otherSpeed = scaler * strength;
+
+                        controlManager.setRightSpeed((int)otherSpeed);
+                        controlManager.setLeftSpeed((int)strength);
+                    } else if (angle > 95 && angle < 175) {
+
+                        double scaler = (angle - 95) * 0.0125;
+                        double otherSpeed = (1-scaler) * strength;
+
+                        controlManager.setRightSpeed((int)strength);
+                        controlManager.setLeftSpeed((int)otherSpeed);
                     }
                     stellaBleManager.update();
                 } else {

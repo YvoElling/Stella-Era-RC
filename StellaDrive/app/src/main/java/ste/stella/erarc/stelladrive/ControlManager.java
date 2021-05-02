@@ -13,15 +13,16 @@ public class ControlManager {
     }
 
     public void setLeftSpeed(float speed) {
-        this.leftSpeed = speed * motorPowerLimit;
+        this.leftSpeed = speed * motorPowerLimit * (float)2.55;
     }
 
     public void setRightSpeed(float speed) {
-        this.rightSpeed = speed * motorPowerLimit;
+
+        this.rightSpeed = speed * motorPowerLimit * (float)2.55;
     }
 
     public void setEqualSpeed(float speed)  {
-        float speedLimit = speed * motorPowerLimit;
+        float speedLimit = speed * motorPowerLimit * (float)2.55;
         this.rightSpeed = speedLimit;
         this.leftSpeed = speedLimit;
     }

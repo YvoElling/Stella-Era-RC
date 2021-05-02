@@ -44,13 +44,14 @@ public class StellaBleManager extends BleManager {
     }
 
     public void update() {
-        int leftSpeed = (int)(ControlManager.getInstance().getLeftSpeed()*2.55);
+        int leftSpeed = (int)(ControlManager.getInstance().getLeftSpeed());
+        int rightSpeed = (int)(ControlManager.getInstance().getRightSpeed());
         BigInteger bigInt = BigInteger.valueOf(leftSpeed);
         byte[] bytes = toByteArrayUnsigned(bigInt);
 
-        System.out.println(leftSpeed);
-        System.out.println(bytes);
-        writeCharacteristic(speedLeft, bytes).enqueue();
+        System.out.println("Leftspeed: " + leftSpeed);
+        System.out.println("Rightspeed: " + rightSpeed);
+        //writeCharacteristic(speedLeft, bytes).enqueue();
     }
 
     @NonNull
