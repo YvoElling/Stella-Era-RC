@@ -12,7 +12,9 @@ BLEService speedService(uuidSpeedService);
 BLEByteCharacteristic leftSpeed(uuidOfLeftSpeed, BLEWriteWithoutResponse | BLEWrite | BLENotify);
 BLEByteCharacteristic rightSpeed(uuidOfRightSpeed, BLEWriteWithoutResponse | BLEWrite | BLENotify);
 
-int speed = 0;
+int motorLeftA = 2;
+int motorLeftB = 3;
+int enMotorLeft = 5;
 
 void setup() {
   if (DEBUG) {
@@ -36,23 +38,27 @@ void setup() {
   speedService.addCharacteristic(rightSpeed);
   BLE.addService(speedService);
 
+  pinMode(motorLeftA, OUTPUT);
+  pinMode(motorLeftB, OUTPUT);
+  pinMode(enMotorLeft, OUTPUT);
+
+  digitalWrite(motorLeftA, HIGH);
+  digitalWrite(motorLeftB, LOW);
+  analogWrite(enMotorLeft, 200);
+
   BLE.advertise();
 }
 
 void loop() {
   BLEDevice central = BLE.central();
   if (central) {
-    //Serial.println("Central exists");
+    Serial.println("Connected to Stella Drive app");
     
     while(central.connected()) {
-      
-      delay(50);
-
-      int new_speed = leftSpeed.value();
-      if (new_speed != speed) {
-        Serial.println(leftSpeed.value());   
-        Serial.println(rightSpeed.value());
-      }
+      delay(100);
+      int leftMotorSpeed = leftSpeed.value();
+      analogWrite(enMotorLeft, leftMotorSpeed);
+      Serial.println(leftMotorSpeed);
     }
   }
 }
