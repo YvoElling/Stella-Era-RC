@@ -14,7 +14,16 @@ BLEByteCharacteristic rightSpeed(uuidOfRightSpeed, BLEWriteWithoutResponse | BLE
 
 int motorLeftA = 2;
 int motorLeftB = 3;
+int motorRightA = 9;
+int motorRightB = 10;
+int enMotorRight = 11;
 int enMotorLeft = 5;
+
+int ledBrakeLightLeft = 4;
+int ledBrakeLightRight = 7;
+
+int prev_left_speed = 0;
+int prev_right_speed = 0;
 
 void setup() {
   if (DEBUG) {
@@ -41,10 +50,20 @@ void setup() {
   pinMode(motorLeftA, OUTPUT);
   pinMode(motorLeftB, OUTPUT);
   pinMode(enMotorLeft, OUTPUT);
+  pinMode(motorRightA, OUTPUT);
+  pinMode(motorRightB, OUTPUT);
+  pinMode(enMotorRight, OUTPUT);
+  pinMode(ledBrakeLightLeft, OUTPUT);
+  pinMode(ledBrakeLightRight, OUTPUT);
 
   digitalWrite(motorLeftA, HIGH);
   digitalWrite(motorLeftB, LOW);
+  digitalWrite(motorRightA, HIGH);
+  digitalWrite(motorRightB, LOW);
+  digitalWrite(ledBrakeLightLeft, LOW);
+  digitalWrite(ledBrakeLightRight, LOW);
   analogWrite(enMotorLeft, 200);
+  analogWrite(enMotorRight, 200);
 
   BLE.advertise();
 }
@@ -57,7 +76,18 @@ void loop() {
     while(central.connected()) {
       delay(100);
       int leftMotorSpeed = leftSpeed.value();
+      int rightMotorSpeed = rightSpeed.value();
+      if (leftMotorSpeed < prev_left_speed && rightMotorSpeed < prev_right_speed) {
+        digitalWrite(ledBrakeLightLeft, HIGH); 
+        digitalWrite(ledBrakeLightRight, HIGH); 
+      } else {
+        digitalWrite(ledBrakeLightLeft, LOW);
+        digitalWrite(ledBrakeLightRight, LOW); 
+      }
       analogWrite(enMotorLeft, leftMotorSpeed);
+      analogWrite(enMotorRight, rightMotorSpeed);
+      prev_left_speed = leftMotorSpeed;
+      prev_right_speed = rightMotorSpeed;
       Serial.println(leftMotorSpeed);
     }
   }
