@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -50,26 +51,6 @@ public class MainActivity extends AppCompatActivity {
         stellaBleManager = new StellaBleManager(getBaseContext());
         bleScanner = BluetoothLeScannerCompat.getScanner();
         handleBluetoothStatusCard();
-
-        SeekBar seekBar = (SeekBar) findViewById(R.id.motor_power_selected_level);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
-                // 20 is defined as stepsize (5 levels, total of 100%, so 20% per step)
-                controlManager.setMotorPowerLimit(20 * progress);
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-
-        });
 
         JoystickView joystick = (JoystickView) findViewById(R.id.joystick_control);
         joystick.setOnMoveListener(new JoystickView.OnMoveListener() {
@@ -115,8 +96,30 @@ public class MainActivity extends AppCompatActivity {
                 }
                 stellaBleManager.update();
             }
+        });
 
+        ImageButton leftBlinkerButton = (ImageButton) findViewById(R.id.leftBlinkerButton);
+        leftBlinkerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stellaBleManager.updateBlinker(true);
+            }
+        });
 
+        ImageButton rightBlinkerButton = (ImageButton) findViewById(R.id.rightBlinkerButton);
+        rightBlinkerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stellaBleManager.updateBlinker(false);
+            }
+        });
+
+        ImageButton lightsOnButton = (ImageButton) findViewById(R.id.lightsOnButton);
+        lightsOnButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stellaBleManager.updateLightStatus();
+            }
         });
     }
 

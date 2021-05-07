@@ -5,4 +5,5 @@
     <string name="set_motor_power">Select Motor Power</string>
     <string name="bluetooth_status">Bluetooth Status</string>
     <string name="disconnected">Disconnected</string>
+    <string name="Lights">Lights</string>
 </resources>

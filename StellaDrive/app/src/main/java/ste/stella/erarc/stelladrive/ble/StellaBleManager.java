@@ -19,7 +19,17 @@ public class StellaBleManager extends BleManager {
     final static UUID SpeedLeft = UUID.fromString("461263fe-aa6c-11eb-bcbc-0242ac130002");
     final static UUID SpeedRight = UUID.fromString("461264f8-aa6c-11eb-bcbc-0242ac130002");
 
-    private BluetoothGattCharacteristic speedLeft, speedRight;
+    final static UUID LightService = UUID.fromString("952f05b6-af47-11eb-8529-0242ac130003");
+    final static UUID LightOn = UUID.fromString("952f0804-af47-11eb-8529-0242ac130003");
+    final static UUID LightBlinkerLeftOn = UUID.fromString("952f08ea-af47-11eb-8529-0242ac130003");
+    final static UUID LightBlinkerRightOn = UUID.fromString("952f09b2-af47-11eb-8529-0242ac130003");
+
+    private int lastLeftBlinker = 0;
+    private int lastRightblinker = 0;
+    private int lightStatus = 0;
+
+    private BluetoothGattCharacteristic speedLeft, speedRight, lightOn, lightBlinkerLeftOn,
+            lightBlinkerRightOn;
 
     public StellaBleManager(@NonNull Context context) {
         super(context);
@@ -42,6 +52,49 @@ public class StellaBleManager extends BleManager {
                 extractedBytes.length);
         return extractedBytes;
     }
+
+    public void updateLightStatus() {
+        if (lightStatus == 1) {
+            BigInteger bigInt = BigInteger.valueOf(0);
+            byte[] bytes = bigInt.toByteArray();
+            writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+            lightStatus = 0;
+        } else {
+            BigInteger bigInt = BigInteger.valueOf(1);
+            byte[] bytes = bigInt.toByteArray();
+            writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+            lightStatus = 1;
+        }
+    }
+
+    public void updateBlinker(boolean left) {
+        if (left) {
+            if (lastLeftBlinker == 1) {
+                BigInteger bigInt = BigInteger.valueOf(0);
+                byte[] bytes = bigInt.toByteArray();
+                writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+                lastLeftBlinker = 0;
+            } else {
+                BigInteger bigInt = BigInteger.valueOf(1);
+                byte[] bytes = bigInt.toByteArray();
+                writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+                lastRightblinker = 1;
+            }
+        } else {
+            if (lastRightblinker == 1) {
+                BigInteger bigInt = BigInteger.valueOf(0);
+                byte[] bytes = bigInt.toByteArray();
+                writeCharacteristic(lightBlinkerRightOn, bytes).enqueue();
+                lastRightblinker = 0;
+            } else {
+                BigInteger bigInt = BigInteger.valueOf(1);
+                byte[] bytes = bigInt.toByteArray();
+                writeCharacteristic(lightBlinkerRightOn, bytes).enqueue();
+                lastRightblinker = 1;
+            }
+        }
+    }
+
 
     public void update() {
         // Get right and left speed
@@ -70,12 +123,17 @@ public class StellaBleManager extends BleManager {
         @Override
         protected boolean isRequiredServiceSupported(@NonNull BluetoothGatt gatt) {
             final BluetoothGattService service = gatt.getService(SpeedService);
-            if (service == null) {
+            final BluetoothGattService light_service = gatt.getService(LightService);
+            if (service == null || light_service == null) {
                 return false;
             }
             speedLeft = service.getCharacteristic(SpeedLeft);
             speedRight = service.getCharacteristic(SpeedRight);
+            lightBlinkerLeftOn = service.getCharacteristic(LightBlinkerLeftOn);
+            lightBlinkerRightOn = service.getCharacteristic(LightBlinkerRightOn);
+            lightOn = service.getCharacteristic(LightOn);
 
+            // If the speed requirements are satisfied, no need to check the light requirements.
             if (speedRight != null && speedLeft != null) {
                 final int properties_left = speedLeft.getProperties();
                 final int properties_right = speedRight.getProperties();
@@ -97,8 +155,12 @@ public class StellaBleManager extends BleManager {
             BigInteger bigInt = BigInteger.valueOf(0);
             byte[] bytes = bigInt.toByteArray();
 
+            // Set all bluetooth fields to zero.
             writeCharacteristic(speedLeft, bytes).enqueue();
             writeCharacteristic(speedRight, bytes).enqueue();
+            writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+            writeCharacteristic(lightBlinkerRightOn, bytes).enqueue();
+            writeCharacteristic(lightOn, bytes).enqueue();
         }
 
         @Override
