@@ -93,8 +93,8 @@ void setup() {
   digitalWrite(ledBrakeLightRight, LOW);
   digitalWrite(ledFrontLeft, LOW);
   digitalWrite(ledFrontRight, LOW);
-  analogWrite(enMotorLeft, 200);
-  analogWrite(enMotorRight, 200);
+  analogWrite(enMotorLeft, 0);
+  analogWrite(enMotorRight, 0);
 
   lightsOn.setEventHandler(BLEWritten, bleLightsOnEvent);
   lightsBlinkerLeftOn.setEventHandler(BLEWritten, bleLeftBlinkerService);
