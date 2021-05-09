@@ -1,5 +1,5 @@
 #include <ArduinoBLE.h>
-#define DEBUG true
+#define DEBUG false
 
 // Start-up BLE procedure for controlling motor speed
 const char* uuidSpeedService = "46126124-aa6c-11eb-bcbc-0242ac130002";
@@ -41,15 +41,17 @@ int prev_left_speed = 0;
 int prev_right_speed = 0;
 
 // Keep track of lightstatus
-int lightsOnStatus = 0;
+int lightsOnStatus = 2;
+int blinkerLeftStatus = 2;
+int blinkerRightStatus = 2;
 
 void setup() {
-  if (DEBUG) {
-    Serial.begin(9600);
-    while (!Serial) {
-      Serial.println("SERIAL not started");
-    }
-  }
+//  if (DEBUG) {
+//    Serial.begin(9600);
+//    while (!Serial) {
+//      Serial.println("SERIAL not started");
+//    }
+//  }
 
   Serial.println("Starting...");
   if (!BLE.begin()) {
@@ -95,7 +97,9 @@ void setup() {
   analogWrite(enMotorRight, 200);
 
   lightsOn.setEventHandler(BLEWritten, bleLightsOnEvent);
-  
+  lightsBlinkerLeftOn.setEventHandler(BLEWritten, bleLeftBlinkerService);
+  lightsBlinkerRightOn.setEventHandler(BLEWritten, bleRightBlinkerService);
+
   BLE.advertise();
 }
 
@@ -106,7 +110,8 @@ void loop() {
     
     while(central.connected()) {
       delay(100);
-      BLE.poll();
+
+      // Write motor speeds and handle brake lights
       int leftMotorSpeed = leftSpeed.value();
       int rightMotorSpeed = rightSpeed.value();
       if (leftMotorSpeed < prev_left_speed && rightMotorSpeed < prev_right_speed) {
@@ -120,21 +125,65 @@ void loop() {
       analogWrite(enMotorRight, rightMotorSpeed);
       prev_left_speed = leftMotorSpeed;
       prev_right_speed = rightMotorSpeed;
-    }
+
+      // Check if BLE events have changed
+      BLE.poll();
+
+      // Handle light services
+      if (blinkerLeftStatus) {
+        if (digitalRead(ledFrontLeft) == LOW) {
+          digitalWrite(ledFrontLeft, HIGH);
+        } else {
+          digitalWrite(ledFrontLeft, LOW);
+        }
+      } else {
+        digitalWrite(ledFrontLeft, lightsOnStatus);
+      }
+
+      if (blinkerRightStatus) {
+        if (digitalRead(ledFrontRight) == LOW) {
+          digitalWrite(ledFrontRight, HIGH);
+        } else {
+          digitalWrite(ledFrontRight, LOW);
+        }
+      } else {
+        digitalWrite(ledFrontRight, lightsOnStatus);
+      }
+    } 
   }
 }
 
 void bleLightsOnEvent(BLEDevice central, BLECharacteristic characteristic) {
   Serial.println("Event callback for ledOn called");
   if (lightsOnStatus == 0) {
-    Serial.println("Turning light off.");
+    Serial.println("Turning light on.");
     lightsOnStatus = 1;
     digitalWrite(ledFrontLeft, HIGH);
     digitalWrite(ledFrontRight, HIGH);
   } else {
-    Serial.println("Turning light on.");
+    Serial.println("Turning light off.");
     lightsOnStatus = 0;
     digitalWrite(ledFrontLeft, LOW);
+    digitalWrite(ledFrontRight, LOW);
+  } 
+}
+
+void bleLeftBlinkerService(BLEDevice central, BLECharacteristic characteristic) {
+  if (blinkerLeftStatus == 0) {
+    blinkerLeftStatus = 1;
+    digitalWrite(ledFrontLeft, HIGH);
+  } else {
+    blinkerLeftStatus = 0;
+    digitalWrite(ledFrontLeft, LOW);
+  } 
+}
+
+void bleRightBlinkerService(BLEDevice central, BLECharacteristic characteristic) {
+  if (blinkerRightStatus == 0) {
+    blinkerRightStatus = 1;
+    digitalWrite(ledFrontRight, HIGH);
+  } else {
+    blinkerRightStatus = 0;
     digitalWrite(ledFrontRight, LOW);
   } 
 }
