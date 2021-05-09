@@ -57,12 +57,12 @@ public class StellaBleManager extends BleManager {
         if (lightStatus == 1) {
             BigInteger bigInt = BigInteger.valueOf(0);
             byte[] bytes = bigInt.toByteArray();
-            writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+            writeCharacteristic(lightOn, bytes).enqueue();
             lightStatus = 0;
         } else {
             BigInteger bigInt = BigInteger.valueOf(1);
             byte[] bytes = bigInt.toByteArray();
-            writeCharacteristic(lightBlinkerLeftOn, bytes).enqueue();
+            writeCharacteristic(lightOn, bytes).enqueue();
             lightStatus = 1;
         }
     }
@@ -129,9 +129,9 @@ public class StellaBleManager extends BleManager {
             }
             speedLeft = service.getCharacteristic(SpeedLeft);
             speedRight = service.getCharacteristic(SpeedRight);
-            lightBlinkerLeftOn = service.getCharacteristic(LightBlinkerLeftOn);
-            lightBlinkerRightOn = service.getCharacteristic(LightBlinkerRightOn);
-            lightOn = service.getCharacteristic(LightOn);
+            lightBlinkerLeftOn = light_service.getCharacteristic(LightBlinkerLeftOn);
+            lightBlinkerRightOn = light_service.getCharacteristic(LightBlinkerRightOn);
+            lightOn = light_service.getCharacteristic(LightOn);
 
             // If the speed requirements are satisfied, no need to check the light requirements.
             if (speedRight != null && speedLeft != null) {
